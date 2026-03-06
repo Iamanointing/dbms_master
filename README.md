@@ -13,12 +13,15 @@ Then open `http://localhost:3000`.
 
 ### Admin login
 
-Set an admin key before starting the server:
+Set an admin password hash before starting the server:
 
 PowerShell:
 
 ```powershell
-$env:ADMIN_KEY="changeme"
+$hashOutput = node scripts/generate-admin-password.mjs "changeme"
+# Copy the printed ADMIN_PASSWORD_HASH and ADMIN_AUTH_SECRET into your environment, e.g.:
+$env:ADMIN_PASSWORD_HASH="(paste from script output)"
+$env:ADMIN_AUTH_SECRET="(paste from script output)"
 npm run dev
 ```
 

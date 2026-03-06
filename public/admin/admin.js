@@ -1,11 +1,13 @@
-const LS_ADMIN_KEY = "dbms_admin_key";
+const LS_ADMIN_TOKEN = "dbms_admin_token";
+const LS_ADMIN_KEY = "dbms_admin_key"; // legacy
 
 const els = {
   root: document.getElementById("adminRoot"),
   logoutBtn: document.getElementById("logoutBtn")
 };
 
-let adminKey = localStorage.getItem(LS_ADMIN_KEY) || "";
+let adminToken = localStorage.getItem(LS_ADMIN_TOKEN) || "";
+let adminKeyLegacy = localStorage.getItem(LS_ADMIN_KEY) || "";
 let topicsDb = null; // {topics: [...]}
 let lessonsDb = null; // {lessons: [...]}
 
@@ -34,7 +36,8 @@ async function api(path, opts = {}) {
     headers: {
       ...(opts.headers || {}),
       "content-type": "application/json",
-      ...(adminKey ? { "x-admin-key": adminKey } : {})
+      ...(adminToken ? { authorization: `Bearer ${adminToken}` } : {}),
+      ...(!adminToken && adminKeyLegacy ? { "x-admin-key": adminKeyLegacy } : {})
     },
     ...opts
   });
@@ -790,20 +793,29 @@ function renderLogin() {
     e.preventDefault();
     clearNotice(notice);
     const fd = new FormData(form);
-    const key = String(fd.get("key") || "");
+    const password = String(fd.get("password") || fd.get("key") || "");
     try {
-      const res = await fetch("/api/admin/check", {
+      const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ key })
+        body: JSON.stringify({ password })
       });
       const json = await res.json();
       if (!json?.ok) {
-        showNotice(notice, "Invalid key.", "bad");
+        showNotice(notice, "Invalid password.", "bad");
         return;
       }
-      adminKey = key;
-      localStorage.setItem(LS_ADMIN_KEY, adminKey);
+      adminToken = String(json?.token || "");
+      if (adminToken) {
+        localStorage.setItem(LS_ADMIN_TOKEN, adminToken);
+        // clear legacy key if we have token
+        localStorage.removeItem(LS_ADMIN_KEY);
+        adminKeyLegacy = "";
+      } else {
+        // Legacy mode: server didn't issue a token, so fall back to x-admin-key.
+        adminKeyLegacy = password;
+        localStorage.setItem(LS_ADMIN_KEY, adminKeyLegacy);
+      }
       await boot();
     } catch (err) {
       showNotice(notice, String(err?.message || err), "bad");
@@ -812,7 +824,7 @@ function renderLogin() {
 }
 
 async function boot() {
-  if (!adminKey) {
+  if (!adminToken && !adminKeyLegacy) {
     renderLogin();
     return;
   }
@@ -821,14 +833,18 @@ async function boot() {
     await refreshAll();
     renderAdminApp();
   } catch {
-    adminKey = "";
+    adminToken = "";
+    adminKeyLegacy = "";
+    localStorage.removeItem(LS_ADMIN_TOKEN);
     localStorage.removeItem(LS_ADMIN_KEY);
     renderLogin();
   }
 }
 
 els.logoutBtn.addEventListener("click", () => {
-  adminKey = "";
+  adminToken = "";
+  adminKeyLegacy = "";
+  localStorage.removeItem(LS_ADMIN_TOKEN);
   localStorage.removeItem(LS_ADMIN_KEY);
   renderLogin();
 });

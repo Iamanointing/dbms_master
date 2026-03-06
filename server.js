@@ -2,12 +2,15 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import crypto from "node:crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_KEY = String(process.env.ADMIN_KEY || "");
+const ADMIN_PASSWORD_HASH = String(process.env.ADMIN_PASSWORD_HASH || "");
+const ADMIN_AUTH_SECRET = String(process.env.ADMIN_AUTH_SECRET || "");
 
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
@@ -30,7 +33,92 @@ function sendText(res, statusCode, text, contentType = "text/plain; charset=utf-
   res.end(text);
 }
 
+function base64UrlEncode(buf) {
+  return Buffer.from(buf)
+    .toString("base64")
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "");
+}
+
+function base64UrlDecodeToBuffer(s) {
+  const input = String(s || "").replaceAll("-", "+").replaceAll("_", "/");
+  const pad = input.length % 4 === 0 ? "" : "=".repeat(4 - (input.length % 4));
+  return Buffer.from(input + pad, "base64");
+}
+
+function timingSafeEqualStr(a, b) {
+  const aa = Buffer.from(String(a || ""), "utf8");
+  const bb = Buffer.from(String(b || ""), "utf8");
+  if (aa.length !== bb.length) return false;
+  return crypto.timingSafeEqual(aa, bb);
+}
+
+function hashPasswordPbkdf2Sha256(password, saltBuf, iterations = 150_000, keyLen = 32) {
+  return crypto.pbkdf2Sync(String(password), saltBuf, iterations, keyLen, "sha256");
+}
+
+function formatPasswordHash({ iterations, saltBuf, hashBuf }) {
+  // pbkdf2_sha256$150000$<saltB64Url>$<hashB64Url>
+  return `pbkdf2_sha256$${iterations}$${base64UrlEncode(saltBuf)}$${base64UrlEncode(hashBuf)}`;
+}
+
+function verifyPassword(password, storedHash) {
+  const s = String(storedHash || "").trim();
+  if (!s) return false;
+  const parts = s.split("$");
+  if (parts.length !== 4) return false;
+  const [alg, itersRaw, saltB64, hashB64] = parts;
+  if (alg !== "pbkdf2_sha256") return false;
+  const iterations = Number(itersRaw);
+  if (!Number.isFinite(iterations) || iterations < 50_000) return false;
+
+  const saltBuf = base64UrlDecodeToBuffer(saltB64);
+  const expectedBuf = base64UrlDecodeToBuffer(hashB64);
+  const actualBuf = hashPasswordPbkdf2Sha256(password, saltBuf, iterations, expectedBuf.length);
+  if (actualBuf.length !== expectedBuf.length) return false;
+  return crypto.timingSafeEqual(actualBuf, expectedBuf);
+}
+
+function makeAdminToken({ iatMs, ttlMs }) {
+  if (!ADMIN_AUTH_SECRET) return "";
+  const payload = { iat: iatMs, exp: iatMs + ttlMs, v: 1 };
+  const payloadB64 = base64UrlEncode(Buffer.from(JSON.stringify(payload), "utf8"));
+  const sig = crypto.createHmac("sha256", ADMIN_AUTH_SECRET).update(payloadB64).digest();
+  const sigB64 = base64UrlEncode(sig);
+  return `v1.${payloadB64}.${sigB64}`;
+}
+
+function verifyAdminToken(token) {
+  if (!ADMIN_AUTH_SECRET) return false;
+  const t = String(token || "").trim();
+  const parts = t.split(".");
+  if (parts.length !== 3) return false;
+  const [v, payloadB64, sigB64] = parts;
+  if (v !== "v1" || !payloadB64 || !sigB64) return false;
+
+  const expectedSig = crypto.createHmac("sha256", ADMIN_AUTH_SECRET).update(payloadB64).digest();
+  const gotSig = base64UrlDecodeToBuffer(sigB64);
+  if (gotSig.length !== expectedSig.length) return false;
+  if (!crypto.timingSafeEqual(gotSig, expectedSig)) return false;
+
+  let payload = null;
+  try {
+    payload = JSON.parse(base64UrlDecodeToBuffer(payloadB64).toString("utf8"));
+  } catch {
+    payload = null;
+  }
+  const exp = Number(payload?.exp ?? 0);
+  if (!Number.isFinite(exp) || exp <= Date.now()) return false;
+  return true;
+}
+
 function isAdmin(req) {
+  const auth = String(req.headers.authorization || "");
+  if (auth.toLowerCase().startsWith("bearer ")) {
+    const token = auth.slice("bearer ".length).trim();
+    if (verifyAdminToken(token)) return true;
+  }
   const headerKey = req.headers["x-admin-key"];
   return Boolean(ADMIN_KEY) && typeof headerKey === "string" && headerKey === ADMIN_KEY;
 }
@@ -463,10 +551,33 @@ async function handleApi(req, res, url) {
   }
 
   // --- Admin ---
+  if (req.method === "POST" && url.pathname === "/api/admin/login") {
+    const body = await parseBody(req);
+    const password = String(body?.password || body?.key || "");
+
+    let ok = false;
+    const usingPasswordHash = Boolean(ADMIN_PASSWORD_HASH);
+    if (usingPasswordHash) ok = verifyPassword(password, ADMIN_PASSWORD_HASH);
+    else if (ADMIN_KEY) ok = timingSafeEqualStr(password, ADMIN_KEY);
+
+    if (!ok) return sendJson(res, 200, { ok: false });
+
+    if (usingPasswordHash && !ADMIN_AUTH_SECRET) {
+      return sendJson(res, 500, { error: "Admin auth misconfigured: set ADMIN_AUTH_SECRET" });
+    }
+
+    // 24h token (recommended). If ADMIN_AUTH_SECRET isn't set (legacy ADMIN_KEY only), token will be empty.
+    const token = makeAdminToken({ iatMs: Date.now(), ttlMs: 24 * 60 * 60 * 1000 });
+    return sendJson(res, 200, { ok: true, token });
+  }
+
   if (req.method === "POST" && url.pathname === "/api/admin/check") {
     const body = await parseBody(req);
-    const key = String(body?.key || "");
-    return sendJson(res, 200, { ok: Boolean(ADMIN_KEY) && key === ADMIN_KEY });
+    const password = String(body?.password || body?.key || "");
+    let ok = false;
+    if (ADMIN_PASSWORD_HASH) ok = verifyPassword(password, ADMIN_PASSWORD_HASH);
+    else if (ADMIN_KEY) ok = timingSafeEqualStr(password, ADMIN_KEY);
+    return sendJson(res, 200, { ok });
   }
 
   if (url.pathname.startsWith("/api/admin/")) {
