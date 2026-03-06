@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DBMS Academy — Admin</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/admin/admin.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="topbar__left">
+          <a class="brand" href="/" aria-label="Student Home">
+            <span class="brand__mark">DBMS</span><span class="brand__name">Academy</span>
+          </a>
+          <div class="kicker" style="margin: 0">Admin Portal</div>
+        </div>
+        <div class="topbar__right">
+          <a class="btn" href="/">Student view</a>
+          <button class="btn" type="button" id="logoutBtn">Logout</button>
+        </div>
+      </header>
+
+      <div class="layout admin-layout">
+        <main class="main">
+          <div class="admin" id="adminRoot"></div>
+        </main>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="modalBackdrop" hidden></div>
+
+    <template id="adminLoginTpl">
+      <section class="card">
+        <h1 class="h1">Admin Login</h1>
+        <p class="muted tiny">Enter the admin key. (Sent to the server via the <code>x-admin-key</code> header.)</p>
+        <form class="form" id="adminLoginForm">
+          <label class="field">
+            <span class="field__label">Admin Key</span>
+            <input class="input" name="key" type="password" required />
+          </label>
+          <div class="row">
+            <button class="btn btn--primary" type="submit">Unlock</button>
+            <a class="btn" href="/">Back</a>
+          </div>
+          <div class="notice" id="adminLoginNotice" hidden></div>
+        </form>
+      </section>
+    </template>
+
+    <template id="adminAppTpl">
+      <section class="card">
+        <div class="admin-grid admin-grid--editor">
+          <div class="admin-panel">
+            <div class="panel__title">Topics</div>
+            <div class="row" style="margin-top: 10px">
+              <button class="btn btn--primary" type="button" id="newTopicBtn">New topic</button>
+              <button class="btn" type="button" id="refreshBtn">Refresh</button>
+            </div>
+            <div class="table-wrap" style="margin-top: 10px">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Published</th>
+                    <th>Title</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="topicRows"></tbody>
+              </table>
+            </div>
+            <div class="notice" id="topicsNotice" hidden></div>
+
+            <div class="panel__title" style="margin-top: 14px">Topic editor</div>
+            <form class="form" id="topicForm">
+              <div class="row">
+                <label class="field" style="flex: 1; min-width: 240px">
+                  <span class="field__label">Topic ID</span>
+                  <input class="input" name="id" placeholder="(auto)" />
+                </label>
+                <label class="field" style="width: 120px">
+                  <span class="field__label">Order</span>
+                  <input class="input" type="number" name="order" min="0" step="1" value="0" />
+                </label>
+              </div>
+              <label class="field">
+                <span class="field__label">Title</span>
+                <input class="input" name="title" required />
+              </label>
+              <div class="row">
+                <label class="field" style="width: 160px">
+                  <span class="field__label">Published</span>
+                  <select class="input" name="published">
+                    <option value="true">Published</option>
+                    <option value="false">Draft</option>
+                  </select>
+                </label>
+              </div>
+              <div class="row">
+                <button class="btn btn--primary" type="submit">Save topic</button>
+                <button class="btn btn--danger" type="button" id="deleteTopicBtn" disabled>Delete topic</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="admin-panel">
+            <div class="panel__title">Lessons <span class="muted tiny" id="selectedTopicLabel"></span></div>
+            <div class="row" style="margin-top: 10px">
+              <button class="btn btn--primary" type="button" id="newLessonBtn" disabled>New lesson</button>
+            </div>
+            <div class="table-wrap" style="margin-top: 10px">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Published</th>
+                    <th>Title</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="lessonRows"></tbody>
+              </table>
+            </div>
+            <div class="notice" id="lessonNotice" hidden></div>
+
+            <div class="panel__title" style="margin-top: 14px">Lesson settings</div>
+            <form class="form" id="lessonMetaForm">
+              <input type="hidden" name="topicId" />
+              <div class="row">
+                <label class="field" style="flex: 1; min-width: 240px">
+                  <span class="field__label">Lesson ID</span>
+                  <input class="input" name="id" required />
+                </label>
+                <label class="field" style="width: 120px">
+                  <span class="field__label">Order</span>
+                  <input class="input" type="number" name="order" min="0" step="1" value="0" />
+                </label>
+              </div>
+              <label class="field">
+                <span class="field__label">Title</span>
+                <input class="input" name="title" required />
+              </label>
+              <div class="row">
+                <label class="field" style="width: 160px">
+                  <span class="field__label">Published</span>
+                  <select class="input" name="published">
+                    <option value="true">Published</option>
+                    <option value="false">Draft</option>
+                  </select>
+                </label>
+              </div>
+              <div class="row">
+                <button class="btn btn--primary" type="submit">Save lesson</button>
+                <button class="btn btn--danger" type="button" id="deleteLessonBtn" disabled>Delete lesson</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="admin-panel">
+            <div class="panel__title">Lesson Builder <span class="muted tiny" id="selectedLessonLabel"></span></div>
+            <div class="row" style="margin-top: 10px">
+              <select class="input" id="addComponentType" style="width: 220px">
+                <option value="heading">Heading</option>
+                <option value="text">Text</option>
+                <option value="code">Code example</option>
+                <option value="table">Data table</option>
+                <option value="media">Media (image/youtube)</option>
+                <option value="exercise">Validation exercise</option>
+              </select>
+              <button class="btn btn--primary" type="button" id="addComponentBtn" disabled>Add component</button>
+              <button class="btn" type="button" id="saveComponentsBtn" disabled>Save builder</button>
+            </div>
+            <div id="componentList" class="c-list" style="margin-top: 12px"></div>
+            <div class="notice" id="builderNotice" hidden></div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <script type="module" src="/admin/admin.js"></script>
+  </body>
+</html>
+

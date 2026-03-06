@@ -1,0 +1,15 @@
+{
+  "name": "dbms-academy",
+  "version": "0.2.0",
+  "private": true,
+  "description": "DBMS Academy — DBMS learning platform with modular lessons, exercise gating, progress, and admin lesson builder.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
+

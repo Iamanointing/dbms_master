@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DBMS Academy</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="topbar__left">
+          <a class="brand" href="#/home" aria-label="Home">
+            <span class="brand__mark">DBMS</span><span class="brand__name">Academy</span>
+          </a>
+          <nav class="tabs" aria-label="Tracks">
+            <button class="tab" type="button" data-track="dbms" aria-selected="true">DBMS</button>
+          </nav>
+        </div>
+        <div class="topbar__right">
+          <div class="progress" aria-label="Overall progress">
+            <div class="progress__meta">
+              <span class="progress__label">Progress</span>
+              <span class="progress__value" id="progressValue">0%</span>
+            </div>
+            <div class="progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+              <div class="progress__fill" id="progressFill" style="width: 0%"></div>
+            </div>
+          </div>
+          <button class="user-chip" type="button" id="userBtn" aria-label="User menu">
+            <span class="user-chip__icon" aria-hidden="true">👤</span>
+            <span class="user-chip__name" id="userName">Guest</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="layout">
+        <aside class="sidebar" aria-label="Lessons sidebar">
+          <div class="sidebar__header">
+            <div class="sidebar__title" id="sidebarTitle">Modules</div>
+            <div class="sidebar__hint">Complete the exercise to unlock the next lesson.</div>
+          </div>
+          <div class="sidebar__content" id="sidebar"></div>
+        </aside>
+
+        <main class="main" aria-live="polite">
+          <div id="main"></div>
+        </main>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="modalBackdrop" hidden></div>
+
+    <template id="welcomeTpl">
+      <section class="card">
+        <h1 class="h1">Welcome to DBMS Academy</h1>
+        <p class="muted">Register once to save your progress and unlock lessons sequentially.</p>
+        <form class="form" id="registerForm">
+          <label class="field">
+            <span class="field__label">Name</span>
+            <input class="input" name="name" autocomplete="name" required />
+          </label>
+          <label class="field">
+            <span class="field__label">Email</span>
+            <input class="input" name="email" type="email" autocomplete="email" required />
+          </label>
+          <div class="row">
+            <button class="btn btn--primary" type="submit">Start Learning</button>
+            <button class="btn" type="button" id="useDemoBtn">Use demo account</button>
+          </div>
+          <p class="tiny muted">Admin? Open <a href="/admin/">Admin Dashboard</a>.</p>
+        </form>
+      </section>
+    </template>
+
+    <template id="lessonTpl">
+      <article class="lesson">
+        <header class="lesson__header">
+          <div class="kicker" id="lessonModule"></div>
+          <h1 class="h1" id="lessonTitle"></h1>
+          <div class="lesson__actions">
+            <button class="btn btn--primary" type="button" id="markCompleteBtn">Mark complete</button>
+          </div>
+        </header>
+
+        <section class="lesson__panel">
+          <div class="panel__title">Lesson</div>
+          <div class="content" id="lessonContent"></div>
+        </section>
+
+        <section class="lesson__panel" id="exercisePanel" hidden>
+          <div class="panel__title">Validation Exercise</div>
+          <div class="muted tiny" id="exercisePrompt"></div>
+          <div class="row" style="margin-top: 10px">
+            <input class="input" id="exerciseAnswer" placeholder="Your answer" style="flex: 1; min-width: 220px" />
+            <button class="btn btn--primary" type="button" id="exerciseCheckBtn">Check</button>
+          </div>
+          <div class="notice" id="exerciseNotice" hidden></div>
+        </section>
+
+        <footer class="lesson__footer">
+          <button class="btn" type="button" id="prevBtn">Previous</button>
+          <button class="btn btn--primary" type="button" id="nextBtn">Next</button>
+          <span class="muted tiny" id="completionHint"></span>
+        </footer>
+      </article>
+    </template>
+
+    <template id="userMenuTpl">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="User menu">
+        <div class="modal__header">
+          <div>
+            <div class="modal__kicker">Account</div>
+            <div class="modal__title">Your profile</div>
+          </div>
+          <button class="icon-btn" type="button" data-close aria-label="Close">✕</button>
+        </div>
+        <div class="modal__body">
+          <div class="kv">
+            <div class="kv__k">Name</div>
+            <div class="kv__v" id="umName"></div>
+            <div class="kv__k">Email</div>
+            <div class="kv__v" id="umEmail"></div>
+          </div>
+          <div class="row" style="margin-top: 12px">
+            <button class="btn" type="button" id="resetUserBtn">Switch user</button>
+            <a class="btn" href="/admin/">Admin Dashboard</a>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--primary" type="button" data-close>Done</button>
+        </div>
+      </div>
+    </template>
+
+    <template id="noticeTpl">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Notice">
+        <div class="modal__header">
+          <div>
+            <div class="modal__kicker">Notice</div>
+            <div class="modal__title">Heads up</div>
+          </div>
+          <button class="icon-btn" type="button" data-close aria-label="Close">✕</button>
+        </div>
+        <div class="modal__body">
+          <div class="notice" id="noticeMsg"></div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--primary" type="button" data-close>OK</button>
+        </div>
+      </div>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
+

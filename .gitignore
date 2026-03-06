@@ -1,0 +1,12 @@
+node_modules/
+
+# Runtime / user-generated data (do not commit)
+data/progress/
+data/users.json
+public/uploads/
+
+# Editor/tooling
+.DS_Store
+.vscode/
+.cursor/
+

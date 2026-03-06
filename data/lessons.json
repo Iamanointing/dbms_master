@@ -1,0 +1,166 @@
+{
+  "lessons": [
+    {
+      "id": "what-is-dbms",
+      "topicId": "intro",
+      "track": "dbms",
+      "title": "What is a DBMS?",
+      "order": 0,
+      "published": true,
+      "components": [
+        {
+          "id": "c1",
+          "type": "heading",
+          "order": 0,
+          "data": {
+            "text": "What is a DBMS?",
+            "level": 2
+          }
+        },
+        {
+          "id": "c2",
+          "type": "text",
+          "order": 1,
+          "data": {
+            "text": "A Database Management System (DBMS) is software that stores, organizes, and manages data so applications can create, read, update, and delete it safely."
+          }
+        },
+        {
+          "id": "c3",
+          "type": "text",
+          "order": 2,
+          "data": {
+            "text": "In this course you’ll learn core DBMS ideas (tables, keys, normalization) and apply them through SQL examples."
+          }
+        },
+        {
+          "id": "c4",
+          "type": "exercise",
+          "order": 3,
+          "data": {
+            "prompt": "Fill in the blank: A DBMS is software used to ______ data.",
+            "placeholder": "your answer",
+            "acceptedAnswers": [
+              "manage",
+              "store and manage",
+              "store, organize and manage"
+            ],
+            "correctAnswer": "manage"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sql-select",
+      "topicId": "sql",
+      "track": "dbms",
+      "title": "SQL SELECT",
+      "order": 0,
+      "published": true,
+      "components": [
+        {
+          "id": "c1",
+          "type": "heading",
+          "order": 0,
+          "data": {
+            "text": "SQL SELECT Statement",
+            "level": 2
+          }
+        },
+        {
+          "id": "c2",
+          "type": "text",
+          "order": 1,
+          "data": {
+            "text": "The SELECT statement retrieves data from a table."
+          }
+        },
+        {
+          "id": "c3",
+          "type": "code",
+          "order": 2,
+          "data": {
+            "language": "sql",
+            "code": "SELECT name\nFROM students;"
+          }
+        },
+        {
+          "id": "c4",
+          "type": "table",
+          "order": 3,
+          "data": {
+            "columns": [
+              "name"
+            ],
+            "rows": [
+              [
+                "Ada"
+              ],
+              [
+                "Grace"
+              ],
+              [
+                "Linus"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "c5",
+          "type": "exercise",
+          "order": 4,
+          "data": {
+            "prompt": "Write a query to select all columns from the table `students`.",
+            "placeholder": "e.g. SELECT * FROM students;",
+            "acceptedAnswers": [
+              "select * from students",
+              "select * from students;"
+            ],
+            "correctAnswer": "SELECT * FROM students;"
+          }
+        }
+      ]
+    },
+    {
+      "id": "advantages-of-dbms",
+      "topicId": "intro",
+      "track": "dbms",
+      "title": "Advantages of a DBMS",
+      "order": 1,
+      "published": true,
+      "components": [
+        {
+          "id": "c1",
+          "type": "heading",
+          "order": 0,
+          "data": {
+            "text": "Advantages of a DBMS",
+            "level": 2
+          }
+        },
+        {
+          "id": "c2",
+          "type": "text",
+          "order": 1,
+          "data": {
+            "text": "A DBMS improves data sharing, consistency, security, and reduces redundancy."
+          }
+        },
+        {
+          "id": "c3",
+          "type": "exercise",
+          "order": 2,
+          "data": {
+            "prompt": "Type one advantage of a DBMS.",
+            "placeholder": "e.g. security",
+            "acceptedAnswers": [
+              "security",
+              "data consistency",
+              "reduced redundancy"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

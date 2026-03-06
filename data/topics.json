@@ -1,0 +1,18 @@
+{
+  "topics": [
+    {
+      "id": "intro",
+      "title": "Introduction",
+      "track": "dbms",
+      "order": 0,
+      "published": true
+    },
+    {
+      "id": "sql",
+      "title": "SQL",
+      "track": "dbms",
+      "order": 1,
+      "published": true
+    }
+  ]
+}
